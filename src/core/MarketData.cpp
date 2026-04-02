@@ -9,6 +9,38 @@
 namespace trading {
 
 // ─────────────────────────────────────────────
+//  formatTimestamp — Convert 16-digit string 
+//  (Microseconds) to [YYYY-MM-DD HH:MM:SS]
+// ─────────────────────────────────────────────
+std::string formatTimestamp(const std::string& timestampStr) {
+    if (timestampStr.empty()) return "0000-00-00 00:00:00";
+
+    try {
+        long long rawTs = std::stoll(timestampStr);
+
+        // 16 digits = Microseconds (10^6), 13 digits = Milliseconds (10^3)
+        long long seconds;
+        if (timestampStr.length() >= 16) {
+            seconds = rawTs / 1000000LL;
+        } else {
+            seconds = rawTs / 1000LL;
+        }
+
+        std::time_t t = static_cast<std::time_t>(seconds);
+        std::tm* tm_ptr = std::gmtime(&t); 
+
+        // Format into: YYYY-MM-DD HH:MM:SS
+        std::ostringstream oss;
+        oss << std::put_time(tm_ptr, "%Y-%m-%d %H:%M:%S");
+        
+        return oss.str();
+    } catch (const std::exception& e) {
+        // Return a placeholder if the string wasn't a valid number
+        return "INVALID TIMESTAMP";
+    }
+}
+
+// ─────────────────────────────────────────────
 //  Constructor
 // ─────────────────────────────────────────────
 MarketData::MarketData(const std::string& filepath)
@@ -101,7 +133,7 @@ Bar MarketData::parseRow(const std::string& line, int lineNumber) {
 
     try {
         Bar bar;
-        bar.date   = tokens[0];
+        bar.date   = formatTimestamp(tokens[0]);
         bar.open   = std::stod(tokens[1]);
         bar.high   = std::stod(tokens[2]);
         bar.low    = std::stod(tokens[3]);

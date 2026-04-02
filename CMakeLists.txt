@@ -34,7 +34,7 @@ set(STRATEGY_SOURCES
 )
 
 set(PORTFOLIO_SOURCES
-    # src/portfolio/Portfolio.cpp      ← v0.4
+    src/portfolio/Portfolio.cpp      
 )
 
 # ── Core static library ───────────────────────────────────
