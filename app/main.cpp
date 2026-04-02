@@ -6,6 +6,7 @@
 #include "core/MarketData.h"
 #include "core/Strategy.h"
 #include "strategy/MovingAverageStrategy.h"
+#include "portfolio/Portfolio.h"
 #include "utils/Logger.h"
 
 
@@ -37,7 +38,7 @@ std::string formatTimestamp(const std::string& timestampStr) {
         return oss.str();
     } catch (const std::exception& e) {
         // Return a placeholder if the string wasn't a valid number
-        return "[INVALID TIMESTAMP]";
+        return "INVALID TIMESTAMP";
     }
 }
 
@@ -67,7 +68,7 @@ void printSignals(const std::vector<trading::TradeSignal>& signals,
     }
 }
 
-int main(int argc, char* argv[]) {
+/* int main(int argc, char* argv[]) {
     // ── Init Logger ───────────────────────────────────────
     try {
         trading::Logger::instance().init("logs/backtester.log", trading::LogLevel::DEBUG);
@@ -97,6 +98,71 @@ int main(int argc, char* argv[]) {
 
         std::cout << "\nReady for v0.4 - Portfolio Simulation\n\n";
         LOG_INFO("Main", "v0.3 complete - ready for v0.4 Portfolio");
+
+    } catch (const std::exception& e) {
+        LOG_ERROR("Main", std::string("Fatal: ") + e.what());
+        std::cerr << "\n[ERROR] " << e.what() << "\n";
+        return 1;
+    }
+
+    LOG_INFO("Main", "Session complete");
+    return 0;
+}
+ */
+
+
+
+
+
+
+
+int main(int argc, char* argv[]) {
+    // ── Init Logger ───────────────────────────────────────
+    try {
+        trading::Logger::instance().init("logs/backtester.log", trading::LogLevel::DEBUG);
+    } catch (const std::exception& e) {
+        std::cerr << "[WARN] Could not open log file: " << e.what() << "\n";
+    }
+
+    LOG_INFO("Main", "QuantTradingSystem v0.4 starting");
+
+    std::string dataPath = (argc > 1) ? argv[1] : "data/prices.csv";
+
+    try {
+        // ── Load Market Data ──────────────────────────────
+        trading::MarketData data(dataPath);
+        data.printSummary();
+
+        // ── SMA Strategy + Portfolio ──────────────────────
+        std::cout << "========================================\n";
+        std::cout << "  SMA Crossover (5/20)\n";
+        std::cout << "========================================\n";
+
+        trading::MovingAverageStrategy smaStrategy(5, 20, trading::MAType::SMA);
+        auto smaSignals = smaStrategy.generateSignals(data);
+
+        trading::Portfolio smaPortfolio(100000.0);
+        smaPortfolio.run(smaSignals, data);
+        smaPortfolio.printSummary();
+        smaPortfolio.printTrades();
+        smaPortfolio.printEquityCurve();
+
+        // ── EMA Strategy + Portfolio ──────────────────────
+        std::cout << "\n========================================\n";
+        std::cout << "  EMA Crossover (5/20)\n";
+        std::cout << "========================================\n";
+
+        trading::MovingAverageStrategy emaStrategy(5, 20, trading::MAType::EMA);
+        auto emaSignals = emaStrategy.generateSignals(data);
+
+        trading::Portfolio emaPortfolio(100000.0);
+        emaPortfolio.run(emaSignals, data);
+        emaPortfolio.printSummary();
+        emaPortfolio.printTrades();
+        emaPortfolio.printEquityCurve();
+
+        std::cout << "\nReady for v0.5 - Backtester Engine\n\n";
+        LOG_INFO("Main", "v0.4 complete - ready for v0.5 Backtester");
 
     } catch (const std::exception& e) {
         LOG_ERROR("Main", std::string("Fatal: ") + e.what());
