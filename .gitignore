@@ -39,3 +39,7 @@ data/*.csv
 
 # extra:
 Roadmap
+*.diff
+
+# pwoershell scripts
+*.ps1
