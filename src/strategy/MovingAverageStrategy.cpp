@@ -55,15 +55,18 @@ const char* MovingAverageStrategy::name() const {
 std::vector<double> MovingAverageStrategy::computeSMA(
     const std::vector<double>& prices, int window) const
 {
+    // Use a rolling sum for O(n) complexity
     std::vector<double> sma(prices.size(), 0.0);
+    if ((int)prices.size() < window) return sma;
 
-    for (int i = window - 1; i < (int)prices.size(); ++i) {
-        double sum = 0.0;
-        for (int j = i - window + 1; j <= i; ++j)
-            sum += prices[j];
-        sma[i] = sum / window;
+    for(int i = 0; i < window; ++i)
+        sma[window - 1] += prices[i]; 
+
+    for (int i = window; i < (int)prices.size(); ++i) {
+        sma[i] = sma[i - 1] + prices[i] - prices[i - window];
+        sma[i - 1] /= window;
     }
-
+    sma[sma.size() - 1] /= window;
     return sma;
 }
 
