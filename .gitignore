@@ -39,3 +39,6 @@ data/*.csv
 
 # extra:
 Roadmap
+
+# pwoershell scripts
+*.ps1

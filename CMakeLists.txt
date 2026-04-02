@@ -30,7 +30,7 @@ set(CORE_SOURCES
 )
 
 set(STRATEGY_SOURCES
-    # src/strategy/MovingAverageStrategy.cpp   ← v0.3
+    src/strategy/MovingAverageStrategy.cpp   
 )
 
 set(PORTFOLIO_SOURCES
