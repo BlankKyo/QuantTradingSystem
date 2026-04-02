@@ -1,31 +1,54 @@
 // include/core/MarketData.h
 #pragma once
+
 #include <string>
 #include <vector>
+#include <stdexcept>
 
-struct OHLCV {
+namespace trading {
+
+// ─────────────────────────────────────────────
+//  OHLCV Bar — single price record
+// ─────────────────────────────────────────────
+struct Bar {
     std::string date;
-    double open;
-    double high;
-    double low;
-    double close;
-    double volume;
-    OHLCV() = default;
-    OHLCV(const std::string& d, double o, double h, double l, double c, double v)
-        : date(d), open(o), high(h), low(l), close(c), volume(v) {}
+    double open   = 0.0;
+    double high   = 0.0;
+    double low    = 0.0;
+    double close  = 0.0;
+    long   volume = 0;
 };
 
+// ─────────────────────────────────────────────
+//  MarketData — CSV loader & price series access
+// ─────────────────────────────────────────────
 class MarketData {
-private:
-    std::vector<OHLCV> data;
-
 public:
-    // Load CSV file
-    bool loadCSV(const std::string& filename);
+    // Load bars from a CSV file (throws on error)
+    explicit MarketData(const std::string& filepath);
 
-    // Number of rows
-    size_t size() const;
+    // Accessors
+    const std::vector<Bar>& bars()  const { return bars_; }
+    size_t                  size()  const { return bars_.size(); }
+    bool                    empty() const { return bars_.empty(); }
 
-    // Access row
-    const OHLCV& operator[](size_t index) const;
+    const Bar& operator[](size_t i) const { return bars_.at(i); }
+
+    // Convenience: extract a single price series
+    std::vector<double> closePrices() const;
+    std::vector<double> openPrices()  const;
+    std::vector<double> volumes()     const;
+
+    // Print summary to stdout
+    void printSummary() const;
+
+private:
+    std::vector<Bar> bars_;
+    std::string      filepath_;
+
+    void        load(const std::string& filepath);
+    static Bar  parseRow(const std::string& line, int lineNumber);
+    static void validateHeader(const std::string& header);
 };
+
+} // namespace trading
