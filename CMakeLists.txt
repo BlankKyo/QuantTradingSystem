@@ -21,12 +21,12 @@ endif()
 # ── Include paths ─────────────────────────────────────────
 include_directories(include)
 
-# ── Core library ──────────────────────────────────────────
-# Add source files here as each version is implemented
+# ── Source files ──────────────────────────────────────────
+# Uncomment each line as the version is implemented
 set(CORE_SOURCES
     src/core/MarketData.cpp
     src/utils/Logger.cpp
-    # src/core/Backtester.cpp      ← v0.5
+    # src/core/Backtester.cpp          ← v0.5
 )
 
 set(STRATEGY_SOURCES
@@ -34,9 +34,10 @@ set(STRATEGY_SOURCES
 )
 
 set(PORTFOLIO_SOURCES
-    # src/portfolio/Portfolio.cpp  ← v0.4
+    # src/portfolio/Portfolio.cpp      ← v0.4
 )
 
+# ── Core static library ───────────────────────────────────
 add_library(trading_core STATIC
     ${CORE_SOURCES}
     ${STRATEGY_SOURCES}
@@ -46,13 +47,13 @@ add_library(trading_core STATIC
 target_include_directories(trading_core PUBLIC include)
 
 # ── Main executable ───────────────────────────────────────
-add_executable(TradingBacktester app/main.cpp)
-target_link_libraries(TradingBacktester PRIVATE trading_core)
+add_executable(QuantTradingSystem app/main.cpp)
+target_link_libraries(QuantTradingSystem PRIVATE trading_core)
 
 # ── Output binary to bin/ ─────────────────────────────────
-set_target_properties(TradingBacktester PROPERTIES
+set_target_properties(QuantTradingSystem PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 # ── Status message ────────────────────────────────────────
-message(STATUS "TradingBacktester v${PROJECT_VERSION} | Build: ${CMAKE_BUILD_TYPE}")
+message(STATUS "QuantTradingSystem v${PROJECT_VERSION} | Build: ${CMAKE_BUILD_TYPE}")
