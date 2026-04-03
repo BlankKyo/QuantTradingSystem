@@ -2,7 +2,7 @@
 
 ## Overview
 A modular, incremental trading backtesting engine written in C++17.
-Currently at **v0.3** — Moving Average Strategy.
+Currently at **v0.4** — Portfolio simulation.
 
 ## Roadmap
 
@@ -11,8 +11,8 @@ Currently at **v0.3** — Moving Average Strategy.
 | v0.1    | Project structure + CMake + Git | ✅ Done    |
 | v0.2    | MarketData CSV loader + Logger  | ✅ Done    |
 | v0.3    | Moving Average Strategy         | ✅ Done    |
-| v0.4    | Portfolio simulation            | 🔜 Next    |
-| v0.5    | Backtester engine               | ⬜ Planned |
+| v0.4    | Portfolio simulation            | ✅ Done    |
+| v0.5    | Backtester engine               | 🔜 Next    |
 | v0.6    | Performance metrics             | ⬜ Planned |
 | v0.7    | Multiple strategies             | ⬜ Planned |
 | v0.8    | Parameter optimization          | ⬜ Planned |
@@ -20,9 +20,12 @@ Currently at **v0.3** — Moving Average Strategy.
 | v1.0    | Complete backtesting engine     | ⬜ Planned |
 
 ## Features (v0.3)
-- Strategy base interface with signal generation
-- Moving Average crossover strategy implementation
-- Integration with MarketData for price access
+- Portfolio class with full trade execution engine
+- Trade struct to record completed round-trip trades (entry/exit/PnL)
+- EquityPoint struct for mark-to-market equity curve
+- Long-only cash management (invest all cash on BUY, close all on SELL)
+- printSummary(), printTrades(), printEquityCurve() output methods
+- Win rate calculation across completed trades
 
 ## Project Structure
 
@@ -49,6 +52,7 @@ TradingBacktester/
 │   ├── strategy/
 │   │   └── MovingAverageStrategy.cpp
 │   ├── portfolio/
+│   │   └── Portfolio.cpp
 │   └── utils/
 │       └── Logger.cpp
 ├── logs/
@@ -95,16 +99,24 @@ Each session is separated with a timestamp header.
 
 ```
 ════════════════════════════════════════════════
-  Session started: 2026-04-03 00:44:15
+  Session started: 2026-04-03 01:40:00
 ════════════════════════════════════════════════
-[2026-04-03 00:44:15] [INFO ]  [Main] QuantTradingSystem v0.3 starting
-[2026-04-03 00:44:15] [INFO ]  [MovingAverageStrategy] Initialized | Type=SMA | Short=5 | Long=20
-[2026-04-03 00:44:15] [INFO ]  [MovingAverageStrategy] Done | BUY=0 SELL=0 HOLD=23 Total=23
-[2026-04-03 00:44:15] [INFO ]  [MovingAverageStrategy] Initialized | Type=EMA | Short=5 | Long=20
-[2026-04-03 00:44:15] [INFO ]  [MovingAverageStrategy] Done | BUY=0 SELL=0 HOLD=23 Total=23
-[2026-04-03 00:44:15] [INFO ]  [Main] v0.3 complete - ready for v0.4 Portfolio
-[2026-04-03 00:44:15] [INFO ]  [Main] Session complete
-  Session ended:   2026-04-03 00:44:15
+[2026-04-03 01:40:00] [INFO ]  [Main] QuantTradingSystem v0.4 starting
+[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Initialized | Type=SMA | Short=5 | Long=20
+[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Done | BUY=0 SELL=0 HOLD=23 Total=23
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Initialized | Cash=$100000.00
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Starting simulation over 23 bars
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Simulation complete | Trades=0 | FinalEquity=$100000.00 | Return=0.00%
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Summary | InitialCash=$100000.000000 FinalEquity=$100000.000000 Return=0.000000% Trades=0
+[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Initialized | Type=EMA | Short=5 | Long=20
+[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Done | BUY=0 SELL=0 HOLD=23 Total=23
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Initialized | Cash=$100000.00
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Starting simulation over 23 bars
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Simulation complete | Trades=0 | FinalEquity=$100000.00 | Return=0.00%
+[2026-04-03 01:40:00] [INFO ]  [Portfolio] Summary | InitialCash=$100000.000000 FinalEquity=$100000.000000 Return=0.000000% Trades=0
+[2026-04-03 01:40:01] [INFO ]  [Main] v0.4 complete - ready for v0.5 Backtester
+[2026-04-03 01:40:01] [INFO ]  [Main] Session complete
+  Session ended:   2026-04-03 01:40:01
 ════════════════════════════════════════════════
 ```
 
