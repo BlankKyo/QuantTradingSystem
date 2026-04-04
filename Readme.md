@@ -2,7 +2,7 @@
 
 ## Overview
 A modular, incremental trading backtesting engine written in C++17.
-Currently at **v0.5** — Full Backtester Engine with multi-strategy orchestration.
+Currently at **v0.6** — Performance Metrics (Sharpe, Drawdown, Volatility, Win Rate).
 
 ## Roadmap
 
@@ -13,20 +13,25 @@ Currently at **v0.5** — Full Backtester Engine with multi-strategy orchestrati
 | v0.3    | Moving Average Strategy         | ✅ Done     |
 | v0.4    | Portfolio simulation            | ✅ Done     |
 | v0.5    | Backtester engine               | ✅ Done     |
-| v0.6    | Performance metrics             | 🔜 Next     |
-| v0.7    | Multiple strategies             | ⬜ Planned  |
+| v0.6    | Performance metrics             | ✅ Done     |
+| v0.7    | Multiple strategies             | 🔜 Next     |
 | v0.8    | Parameter optimization          | ⬜ Planned  |
 | v0.9    | Logging + config                | ⬜ Planned  |
 | v1.0    | Complete backtesting engine     | ⬜ Planned  |
 
-## Features (v0.5)
+## Features (v0.6)
 - CSV market data loader with full OHLCV validation
 - Logger utility — terminal (colored) + `logs/backtester.log`
 - SMA and EMA crossover strategy with configurable windows
 - Long-only portfolio simulation with cash management and equity curve
-- Backtester engine orchestrating the full pipeline: MarketData → Strategy → Portfolio → BacktestResult
-- Multi-strategy support via `addStrategy()` — run and compare N strategies in one call
-- Cross-strategy comparison summary with best performer detection
+- Backtester engine orchestrating the full pipeline
+- **Metrics engine** computing:
+  - Sharpe Ratio (annualized, risk-free configurable)
+  - Max Drawdown (%) and Max Drawdown Duration (bars)
+  - Annualized Volatility (%)
+  - Win Rate, Avg Win, Avg Loss, Profit Factor
+  - Best/Worst Trade, Avg Trade PnL
+- Cross-strategy metrics comparison table
 
 ## Project Structure
 
@@ -40,7 +45,8 @@ TradingBacktester/
 │   ├── core/
 │   │   ├── MarketData.h
 │   │   ├── Strategy.h
-│   │   └── Backtester.h
+│   │   ├── Backtester.h
+│   │   └── Metrics.h          ← NEW
 │   ├── strategy/
 │   │   └── MovingAverageStrategy.h
 │   ├── portfolio/
@@ -51,6 +57,7 @@ TradingBacktester/
 │   ├── core/
 │   │   ├── MarketData.cpp
 │   │   ├── Backtester.cpp
+│   │   └── Metrics.cpp        ← NEW
 │   ├── strategy/
 │   │   └── MovingAverageStrategy.cpp
 │   ├── portfolio/
@@ -86,37 +93,36 @@ cmake --build .
 
 ## Usage
 
-Add strategies in `main.cpp` and call `run()`:
-
 ```cpp
 trading::Backtester bt("data/prices.csv", 100000.0);
-
 bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(5, 20, trading::MAType::SMA));
 bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(5, 20, trading::MAType::EMA));
-bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(3, 10, trading::MAType::SMA));
-
 bt.run();
 bt.printResults();
-bt.printSummary();
+
+// Compute and print metrics
+auto metrics = trading::Metrics::computeAll(bt.results());
+for (const auto& m : metrics)
+    trading::Metrics::print(m);
+trading::Metrics::printComparison(metrics);
 ```
+
+## Metrics Reference
+
+| Metric | Description |
+|--------|-------------|
+| Sharpe Ratio | Annualized return / annualized volatility. >1 good, >2 excellent |
+| Max Drawdown | Largest % drop from any peak to trough |
+| Max DD Duration | Longest consecutive bars spent below peak equity |
+| Volatility | Annualized std dev of daily returns (%) |
+| Win Rate | % of completed trades that were profitable |
+| Profit Factor | Gross profit / gross loss. >1 means system makes money |
 
 ## CSV Format
 
 ```
 date,open,high,low,close,volume
 2024-01-02,185.20,186.95,184.30,185.85,52341200
-```
-
-## Logs
-
-Every session appends to `logs/backtester.log`:
-
-```
-════════════════════════════════════════════════
-  Session started: 2024-01-02 13:45:01
-════════════════════════════════════════════════
-[2024-01-02 13:45:01] [INFO ]  [Backtester] Starting backtest | Strategies=3
-[2024-01-02 13:45:01] [INFO ]  [Backtester] Best strategy: MovingAverageStrategy return=2.54%
 ```
 
 ## Requirements
