@@ -1,31 +1,32 @@
-# C++ Trading Backtester
+# C++ Quantitative Trading Backtester
 
 ## Overview
 A modular, incremental trading backtesting engine written in C++17.
-Currently at **v0.4** — Portfolio simulation.
+Currently at **v0.5** — Full Backtester Engine with multi-strategy orchestration.
 
 ## Roadmap
 
-| Version | Feature                         | Status     |
-|---------|---------------------------------|------------|
-| v0.1    | Project structure + CMake + Git | ✅ Done    |
-| v0.2    | MarketData CSV loader + Logger  | ✅ Done    |
-| v0.3    | Moving Average Strategy         | ✅ Done    |
-| v0.4    | Portfolio simulation            | ✅ Done    |
-| v0.5    | Backtester engine               | 🔜 Next    |
-| v0.6    | Performance metrics             | ⬜ Planned |
-| v0.7    | Multiple strategies             | ⬜ Planned |
-| v0.8    | Parameter optimization          | ⬜ Planned |
-| v0.9    | Logging + config                | ⬜ Planned |
-| v1.0    | Complete backtesting engine     | ⬜ Planned |
+| Version | Feature                         | Status      |
+|---------|---------------------------------|-------------|
+| v0.1    | Project structure + CMake + Git | ✅ Done     |
+| v0.2    | MarketData CSV loader + Logger  | ✅ Done     |
+| v0.3    | Moving Average Strategy         | ✅ Done     |
+| v0.4    | Portfolio simulation            | ✅ Done     |
+| v0.5    | Backtester engine               | ✅ Done     |
+| v0.6    | Performance metrics             | 🔜 Next     |
+| v0.7    | Multiple strategies             | ⬜ Planned  |
+| v0.8    | Parameter optimization          | ⬜ Planned  |
+| v0.9    | Logging + config                | ⬜ Planned  |
+| v1.0    | Complete backtesting engine     | ⬜ Planned  |
 
-## Features (v0.3)
-- Portfolio class with full trade execution engine
-- Trade struct to record completed round-trip trades (entry/exit/PnL)
-- EquityPoint struct for mark-to-market equity curve
-- Long-only cash management (invest all cash on BUY, close all on SELL)
-- printSummary(), printTrades(), printEquityCurve() output methods
-- Win rate calculation across completed trades
+## Features (v0.5)
+- CSV market data loader with full OHLCV validation
+- Logger utility — terminal (colored) + `logs/backtester.log`
+- SMA and EMA crossover strategy with configurable windows
+- Long-only portfolio simulation with cash management and equity curve
+- Backtester engine orchestrating the full pipeline: MarketData → Strategy → Portfolio → BacktestResult
+- Multi-strategy support via `addStrategy()` — run and compare N strategies in one call
+- Cross-strategy comparison summary with best performer detection
 
 ## Project Structure
 
@@ -48,7 +49,8 @@ TradingBacktester/
 │       └── Logger.h
 ├── src/
 │   ├── core/
-│   │   └── MarketData.cpp
+│   │   ├── MarketData.cpp
+│   │   ├── Backtester.cpp
 │   ├── strategy/
 │   │   └── MovingAverageStrategy.cpp
 │   ├── portfolio/
@@ -68,24 +70,37 @@ TradingBacktester/
 ```powershell
 mkdir build
 cd build
+cmake ..
 cmake --build .
-cd ..
-\build\bin\Debug\QuantTradingSystem.exe data\prices.csv
+.\bin\Debug\QuantTradingSystem.exe ..\..\data\prices.csv
 ```
 
 **Linux / macOS:**
 ```bash
 mkdir build
 cd build
--cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build .
-cd ..
-\build\bin\Debug\QuantTradingSystem.exe data\prices.csv
+./bin/QuantTradingSystem ../data/prices.csv
+```
+
+## Usage
+
+Add strategies in `main.cpp` and call `run()`:
+
+```cpp
+trading::Backtester bt("data/prices.csv", 100000.0);
+
+bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(5, 20, trading::MAType::SMA));
+bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(5, 20, trading::MAType::EMA));
+bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(3, 10, trading::MAType::SMA));
+
+bt.run();
+bt.printResults();
+bt.printSummary();
 ```
 
 ## CSV Format
-
-The loader expects the following column order:
 
 ```
 date,open,high,low,close,volume
@@ -94,30 +109,14 @@ date,open,high,low,close,volume
 
 ## Logs
 
-Logs are written to logs/backtester.log automatically on each run.
-Each session is separated with a timestamp header.
+Every session appends to `logs/backtester.log`:
 
 ```
 ════════════════════════════════════════════════
-  Session started: 2026-04-03 01:40:00
+  Session started: 2024-01-02 13:45:01
 ════════════════════════════════════════════════
-[2026-04-03 01:40:00] [INFO ]  [Main] QuantTradingSystem v0.4 starting
-[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Initialized | Type=SMA | Short=5 | Long=20
-[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Done | BUY=0 SELL=0 HOLD=23 Total=23
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Initialized | Cash=$100000.00
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Starting simulation over 23 bars
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Simulation complete | Trades=0 | FinalEquity=$100000.00 | Return=0.00%
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Summary | InitialCash=$100000.000000 FinalEquity=$100000.000000 Return=0.000000% Trades=0
-[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Initialized | Type=EMA | Short=5 | Long=20
-[2026-04-03 01:40:00] [INFO ]  [MovingAverageStrategy] Done | BUY=0 SELL=0 HOLD=23 Total=23
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Initialized | Cash=$100000.00
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Starting simulation over 23 bars
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Simulation complete | Trades=0 | FinalEquity=$100000.00 | Return=0.00%
-[2026-04-03 01:40:00] [INFO ]  [Portfolio] Summary | InitialCash=$100000.000000 FinalEquity=$100000.000000 Return=0.000000% Trades=0
-[2026-04-03 01:40:01] [INFO ]  [Main] v0.4 complete - ready for v0.5 Backtester
-[2026-04-03 01:40:01] [INFO ]  [Main] Session complete
-  Session ended:   2026-04-03 01:40:01
-════════════════════════════════════════════════
+[2024-01-02 13:45:01] [INFO ]  [Backtester] Starting backtest | Strategies=3
+[2024-01-02 13:45:01] [INFO ]  [Backtester] Best strategy: MovingAverageStrategy return=2.54%
 ```
 
 ## Requirements
