@@ -1,40 +1,11 @@
 // app/main.cpp
 #include <iostream>
-#include <iomanip>
+#include <memory>
 #include <stdexcept>
 
-#include "core/MarketData.h"
-#include "core/Strategy.h"
+#include "core/Backtester.h"
 #include "strategy/MovingAverageStrategy.h"
-#include "portfolio/Portfolio.h"
 #include "utils/Logger.h"
-
-
-// ─────────────────────────────────────────────
-//  printSignals — print signal table to terminal
-// ─────────────────────────────────────────────
-void printSignals(const std::vector<trading::TradeSignal>& signals,
-                  const std::string& label)
-{
-
-    std::cout << "\n------------- " << label << " -------------\n";
-    std::cout << std::left
-            << std::setw(25) << "Date"      
-            << std::setw(15) << "Price"     
-            << std::setw(8)  << "Signal"
-            << "\n";
-    std::cout << std::string(48, '-') << "\n"; 
-
-    for (const auto& s : signals) {
-        if (s.signal == trading::Signal::HOLD) continue; 
-
-        std::cout << std::left
-                << std::setw(25) << s.date
-                << std::setw(15) << std::fixed << std::setprecision(2) << s.price
-                << std::setw(8)  << (s.signal == trading::Signal::BUY ? "BUY" : "SELL")
-                << "\n";
-    }
-}
 
 int main(int argc, char* argv[]) {
     // ── Init Logger ───────────────────────────────────────
@@ -44,45 +15,34 @@ int main(int argc, char* argv[]) {
         std::cerr << "[WARN] Could not open log file: " << e.what() << "\n";
     }
 
-    LOG_INFO("Main", "QuantTradingSystem v0.4 starting");
+    LOG_INFO("Main", "QuantTradingSystem v0.5 starting");
 
-    std::string dataPath = (argc > 1) ? argv[1] : "data/prices.csv";
+    std::string dataPath   = (argc > 1) ? argv[1] : "../data/prices.csv";
+    double      initialCash = 100000.0;
 
     try {
-        // ── Load Market Data ──────────────────────────────
-        trading::MarketData data(dataPath);
-        data.printSummary();
+        // ── Build Backtester ──────────────────────────────
+        trading::Backtester bt(dataPath, initialCash);
 
-        // ── SMA Strategy + Portfolio ──────────────────────
-        std::cout << "========================================\n";
-        std::cout << "  SMA Crossover (5/20)\n";
-        std::cout << "========================================\n";
+        // ── Add Strategies ────────────────────────────────
+        bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(
+            5, 20, trading::MAType::SMA));
 
-        trading::MovingAverageStrategy smaStrategy(5, 20, trading::MAType::SMA);
-        auto smaSignals = smaStrategy.generateSignals(data);
+        bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(
+            5, 20, trading::MAType::EMA));
 
-        trading::Portfolio smaPortfolio(100000.0);
-        smaPortfolio.run(smaSignals, data);
-        smaPortfolio.printSummary();
-        smaPortfolio.printTrades();
-        smaPortfolio.printEquityCurve();
+        bt.addStrategy(std::make_shared<trading::MovingAverageStrategy>(
+            3, 10, trading::MAType::SMA));
 
-        // ── EMA Strategy + Portfolio ──────────────────────
-        std::cout << "\n========================================\n";
-        std::cout << "  EMA Crossover (5/20)\n";
-        std::cout << "========================================\n";
+        // ── Run all strategies ────────────────────────────
+        bt.run();
 
-        trading::MovingAverageStrategy emaStrategy(5, 20, trading::MAType::EMA);
-        auto emaSignals = emaStrategy.generateSignals(data);
+        // ── Print results ─────────────────────────────────
+        bt.printResults();
+        bt.printSummary();
 
-        trading::Portfolio emaPortfolio(100000.0);
-        emaPortfolio.run(emaSignals, data);
-        emaPortfolio.printSummary();
-        emaPortfolio.printTrades();
-        emaPortfolio.printEquityCurve();
-
-        std::cout << "\nReady for v0.5 - Backtester Engine\n\n";
-        LOG_INFO("Main", "v0.4 complete - ready for v0.5 Backtester");
+        std::cout << "\nReady for v0.6 - Performance Metrics\n\n";
+        LOG_INFO("Main", "v0.5 complete - ready for v0.6 Metrics");
 
     } catch (const std::exception& e) {
         LOG_ERROR("Main", std::string("Fatal: ") + e.what());
