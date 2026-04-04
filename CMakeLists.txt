@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuantTradingSystem VERSION 0.5.0 LANGUAGES CXX)
+project(QuantTradingSystem VERSION 0.7.0 LANGUAGES CXX)
 
 # ── C++ Standard ──────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 17)
@@ -32,6 +32,8 @@ set(CORE_SOURCES
 
 set(STRATEGY_SOURCES
     src/strategy/MovingAverageStrategy.cpp   
+    src/strategy/RSIStrategy.cpp
+    src/strategy/BollingerBandStrategy.cpp
 )
 
 set(PORTFOLIO_SOURCES
