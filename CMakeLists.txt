@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuantTradingSystem VERSION 0.4.0 LANGUAGES CXX)
+project(QuantTradingSystem VERSION 0.5.0 LANGUAGES CXX)
 
 # ── C++ Standard ──────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 17)
@@ -26,7 +26,7 @@ include_directories(include)
 set(CORE_SOURCES
     src/core/MarketData.cpp
     src/utils/Logger.cpp
-    # src/core/Backtester.cpp          ← v0.5
+    src/core/Backtester.cpp          
 )
 
 set(STRATEGY_SOURCES
