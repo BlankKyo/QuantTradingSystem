@@ -26,7 +26,8 @@ include_directories(include)
 set(CORE_SOURCES
     src/core/MarketData.cpp
     src/utils/Logger.cpp
-    src/core/Backtester.cpp          
+    src/core/Backtester.cpp         
+    src/core/Metrics.cpp     
 )
 
 set(STRATEGY_SOURCES
