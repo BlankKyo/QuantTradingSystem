@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuantTradingSystem VERSION 0.9.0 LANGUAGES CXX)
+project(QuantTradingSystem VERSION 1.0.0 LANGUAGES CXX)
 
 # ── C++ Standard ──────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 17)
@@ -27,14 +27,13 @@ set(CORE_SOURCES
     src/core/Backtester.cpp
     src/core/Metrics.cpp
     src/core/Optimizer.cpp
+    src/core/Report.cpp
     src/utils/Logger.cpp
     src/utils/Config.cpp
 )
 
 set(STRATEGY_SOURCES
     src/strategy/MovingAverageStrategy.cpp
-    src/strategy/RSIStrategy.cpp
-    src/strategy/BollingerBandStrategy.cpp
     src/strategy/RSIStrategy.cpp
     src/strategy/BollingerBandStrategy.cpp
 )
