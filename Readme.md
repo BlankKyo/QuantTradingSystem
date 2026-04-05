@@ -2,7 +2,7 @@
 
 ## Overview
 A modular, incremental trading backtesting engine written in C++17.
-Currently at **v0.7** — Multiple strategies (RSI, BollingerBand).
+Currently at **v0.8** — Parameter Optimization via Grid Search.
 
 ## Roadmap
 
@@ -15,54 +15,59 @@ Currently at **v0.7** — Multiple strategies (RSI, BollingerBand).
 | v0.5    | Backtester engine               | ✅ Done     |
 | v0.6    | Performance metrics             | ✅ Done     |
 | v0.7    | Multiple strategies             | ✅ Done     |
-| v0.8    | Parameter optimization          | 🔜 Next     |
-| v0.9    | Logging + config                | ⬜ Planned  |
+| v0.8    | Parameter optimization          | ✅ Done     |
+| v0.9    | Logging + config                | 🔜 Next     |
 | v1.0    | Complete backtesting engine     | ⬜ Planned  |
 
-## Features (v0.7)
-- RSI-based trading strategy implementation
-- Bollinger Bands trading strategy implementation
+## Features (v0.8)
+- CSV market data loader with full OHLCV validation
+- Logger utility — terminal (colored) + `logs/backtester.log`
+- 3 strategy types: MovingAverage (SMA/EMA), RSI, Bollinger Bands
+- Long-only portfolio simulation with cash management and equity curve
+- Backtester engine orchestrating the full pipeline
+- Metrics engine: Sharpe, Max Drawdown, Volatility, Win Rate, Profit Factor
+- **Optimizer** — grid search over any parameter space:
+  - `ParamRange` struct defines search dimensions
+  - `OptimizationMetric` enum: SHARPE, RETURN, DRAWDOWN, PROFIT_FACTOR, WIN_RATE
+  - Recursive expansion of all parameter combinations
+  - Ranked results table + best parameter summary
+  - MA grid search: 35 combinations (shortWindow 2–8, longWindow 10–30)
+  - RSI grid search: 96 combinations (period, oversold, overbought)
 
 ## Project Structure
 
 ```
 TradingBacktester/
-├── app/
-│   └── main.cpp
-├── data/
-│   └── prices.csv
+├── app/main.cpp
+├── data/prices.csv
 ├── include/
 │   ├── core/
 │   │   ├── MarketData.h
 │   │   ├── Strategy.h
 │   │   ├── Backtester.h
-│   │   └── Metrics.h          
+│   │   ├── Metrics.h
+│   │   └── Optimizer.h          ← NEW v0.8
 │   ├── strategy/
 │   │   ├── MovingAverageStrategy.h
-│   │   ├── RSIStrategy.h                 ← NEW
-│   │   └── BollingerBandStrategy.h       ← NEW
-│   ├── portfolio/
-│   │   └── Portfolio.h
-│   └── utils/
-│       └── Logger.h
+│   │   ├── RSIStrategy.h
+│   │   └── BollingerBandStrategy.h
+│   ├── portfolio/Portfolio.h
+│   └── utils/Logger.h
 ├── src/
 │   ├── core/
 │   │   ├── MarketData.cpp
 │   │   ├── Backtester.cpp
-│   │   └── Metrics.cpp        
+│   │   ├── Metrics.cpp
+│   │   └── Optimizer.cpp        ← NEW v0.8
 │   ├── strategy/
 │   │   ├── MovingAverageStrategy.cpp
-│   │   ├── RSIStrategy.cpp                  ← NEW
-│   │   └── BollingerBandStrategy.cpp        ← NEW
-│   ├── portfolio/
-│   │   └── Portfolio.cpp
-│   └── utils/
-│       └── Logger.cpp
-├── logs/
-│   └── backtester.log
+│   │   ├── RSIStrategy.cpp
+│   │   └── BollingerBandStrategy.cpp
+│   ├── portfolio/Portfolio.cpp
+│   └── utils/Logger.cpp
+├── logs/backtester.log
 ├── CMakeLists.txt
-├── README.md
-└── .gitignore
+└── README.md
 ```
 
 ## Build
@@ -73,18 +78,53 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
-.\bin\Debug\QuantTradingSystem.exe data\prices.csv
+.\bin\Debug\QuantTradingSystem.exe
 ```
 
 **Linux / macOS:**
 ```bash
-mkdir build
-cd build
+mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build .
-./bin/QuantTradingSystem data/prices.csv
+./bin/QuantTradingSystem
 ```
 
+## Usage — Optimizer
+
+```cpp
+trading::Optimizer opt(data, 100000.0);
+opt.setMetric(trading::OptimizationMetric::SHARPE_RATIO);
+
+auto results = opt.gridSearch(
+    { {"shortWindow", 2, 8, 1}, {"longWindow", 10, 30, 5} },
+    [](std::vector<double> p) -> std::shared_ptr<trading::Strategy> {
+        int sw = (int)p[0], lw = (int)p[1];
+        if (sw >= lw) return nullptr;
+        return std::make_shared<trading::MovingAverageStrategy>(sw, lw, trading::MAType::SMA);
+    }
+);
+
+opt.printResults(results, 5);  // top 5
+opt.printBest(results);
+```
+
+## Strategy Reference
+
+| Strategy | Signal Logic | Key Parameters |
+|----------|-------------|----------------|
+| `MovingAverageStrategy` | Short MA crosses long MA | `shortWindow`, `longWindow`, `MAType` |
+| `RSIStrategy` | RSI oversold/overbought crossover | `period`, `oversoldThreshold`, `overboughtThreshold` |
+| `BollingerBandStrategy` | Price breaches band | `period`, `k` |
+
+## Metrics Reference
+
+| Metric | Description |
+|--------|-------------|
+| Sharpe Ratio | Annualized return / volatility. >1 good, >2 excellent |
+| Max Drawdown | Largest % drop from peak to trough |
+| Volatility | Annualized std dev of daily returns (%) |
+| Win Rate | % of completed trades that were profitable |
+| Profit Factor | Gross profit / gross loss. >1 = profitable system |
 
 ## CSV Format
 
