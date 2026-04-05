@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuantTradingSystem VERSION 0.7.0 LANGUAGES CXX)
+project(QuantTradingSystem VERSION 0.8.0 LANGUAGES CXX)
 
 # ── C++ Standard ──────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 17)
@@ -28,6 +28,7 @@ set(CORE_SOURCES
     src/utils/Logger.cpp
     src/core/Backtester.cpp         
     src/core/Metrics.cpp     
+    src/core/Optimizer.cpp
 )
 
 set(STRATEGY_SOURCES
