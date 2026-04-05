@@ -1,52 +1,51 @@
 # C++ Quantitative Trading Backtester
 
 ## Overview
-A modular, incremental trading backtesting engine written in C++17.
-Currently at **v0.9** — Config file support and enhanced logging.
+A complete, modular quantitative trading backtesting engine written in C++17.
+**v1.0** — production-ready, config-driven, with full reporting.
 
 ## Roadmap
 
-| Version | Feature                         | Status      |
-|---------|---------------------------------|-------------|
-| v0.1    | Project structure + CMake + Git | ✅ Done     |
-| v0.2    | MarketData CSV loader + Logger  | ✅ Done     |
-| v0.3    | Moving Average Strategy         | ✅ Done     |
-| v0.4    | Portfolio simulation            | ✅ Done     |
-| v0.5    | Backtester engine               | ✅ Done     |
-| v0.6    | Performance metrics             | ✅ Done     |
-| v0.7    | Multiple strategies             | ✅ Done     |
-| v0.8    | Parameter optimization          | ✅ Done     |
-| v0.9    | Logging + config                | ✅ Done     |
-| v1.0    | Complete backtesting engine     | 🔜 Next     |
+| Version | Feature                         | Status   |
+|---------|---------------------------------|----------|
+| v0.1    | Project structure + CMake + Git | ✅ Done  |
+| v0.2    | MarketData CSV loader + Logger  | ✅ Done  |
+| v0.3    | Moving Average Strategy         | ✅ Done  |
+| v0.4    | Portfolio simulation            | ✅ Done  |
+| v0.5    | Backtester engine               | ✅ Done  |
+| v0.6    | Performance metrics             | ✅ Done  |
+| v0.7    | Multiple strategies             | ✅ Done  |
+| v0.8    | Parameter optimization          | ✅ Done  |
+| v0.9    | Logging + config                | ✅ Done  |
+| v1.0    | Complete backtesting engine     | ✅ Done  |
 
-## Features (v0.9)
-- CSV market data loader with full OHLCV validation
-- **Config-driven execution** — all parameters read from `config.ini`:
-  - Data path, initial cash, trading days
-  - Log level and log file path
-  - Per-strategy parameters (MA windows, RSI thresholds, Bollinger k)
-  - Optimizer search ranges and target metric — all configurable
-- Logger utility — terminal (colored) + file, **log level set from config**
-- 3 strategy types: MovingAverage (SMA/EMA), RSI, Bollinger Bands
-- Long-only portfolio simulation with cash management and equity curve
-- Backtester engine orchestrating the full pipeline
-- Metrics engine: Sharpe, Max Drawdown, Volatility, Win Rate, Profit Factor
-- Optimizer — grid search over configurable parameter ranges
+## Features
+- **Config-driven** — all parameters controlled from `config.ini`
+- **3 strategy types** — MovingAverage (SMA/EMA), RSI, Bollinger Bands
+- **Full pipeline** — MarketData → Strategy → Portfolio → BacktestResult
+- **Performance metrics** — Sharpe Ratio, Max Drawdown, Volatility, Win Rate, Profit Factor
+- **Grid search optimizer** — search any parameter space, rank by any metric
+- **Report generation** — structured session report saved to `reports/`
+- **Session timing** — measures total execution time per run
+- **Thread-safe logger** — colored terminal output + persistent log file
 
 ## Project Structure
 
 ```
 TradingBacktester/
 ├── app/main.cpp
-├── config.ini                   ← NEW v0.9
+├── config.ini
 ├── data/prices.csv
+├── reports/                     ← auto-generated session reports
+├── logs/backtester.log
 ├── include/
 │   ├── core/
 │   │   ├── MarketData.h
 │   │   ├── Strategy.h
 │   │   ├── Backtester.h
 │   │   ├── Metrics.h
-│   │   └── Optimizer.h
+│   │   ├── Optimizer.h
+│   │   └── Report.h             ← NEW v1.0
 │   ├── strategy/
 │   │   ├── MovingAverageStrategy.h
 │   │   ├── RSIStrategy.h
@@ -54,24 +53,22 @@ TradingBacktester/
 │   ├── portfolio/Portfolio.h
 │   └── utils/
 │       ├── Logger.h
-│       └── Config.h             ← NEW v0.9
-├── src/
-│   ├── core/
-│   │   ├── MarketData.cpp
-│   │   ├── Backtester.cpp
-│   │   ├── Metrics.cpp
-│   │   └── Optimizer.cpp
-│   ├── strategy/
-│   │   ├── MovingAverageStrategy.cpp
-│   │   ├── RSIStrategy.cpp
-│   │   └── BollingerBandStrategy.cpp
-│   ├── portfolio/Portfolio.cpp
-│   └── utils/
-│       ├── Logger.cpp
-│       └── Config.cpp           ← NEW v0.9
-├── logs/backtester.log
-├── CMakeLists.txt
-└── README.md
+│       └── Config.h
+└── src/
+    ├── core/
+    │   ├── MarketData.cpp
+    │   ├── Backtester.cpp
+    │   ├── Metrics.cpp
+    │   ├── Optimizer.cpp
+    │   └── Report.cpp           ← NEW v1.0
+    ├── strategy/
+    │   ├── MovingAverageStrategy.cpp
+    │   ├── RSIStrategy.cpp
+    │   └── BollingerBandStrategy.cpp
+    ├── portfolio/Portfolio.cpp
+    └── utils/
+        ├── Logger.cpp
+        └── Config.cpp
 ```
 
 ## Build
@@ -93,15 +90,18 @@ cmake --build .
 ./bin/QuantTradingSystem ../config.ini
 ```
 
-## Config File
+## Usage
 
-All parameters are driven by `config.ini`. Pass a custom config as the first argument:
+Pass a config file as the first argument (defaults to `config.ini`):
 
 ```bash
-./bin/QuantTradingSystem my_config.ini
+./bin/QuantTradingSystem config.ini
+./bin/QuantTradingSystem my_experiment.ini
 ```
 
-### Config Reference
+Session reports are automatically saved to `reports/session_YYYY-MM-DD_HH-MM.txt`.
+
+## Config Reference
 
 ```ini
 [backtester]
@@ -152,30 +152,33 @@ metric           = SHARPE
 top_n            = 5
 ```
 
-## Strategy Reference
+## Pipeline
 
-| Strategy | Signal Logic | Key Parameters |
-|----------|-------------|----------------|
-| `MovingAverageStrategy` | Short MA crosses long MA | `shortWindow`, `longWindow`, `MAType` |
-| `RSIStrategy` | RSI oversold/overbought crossover | `period`, `oversoldThreshold`, `overboughtThreshold` |
-| `BollingerBandStrategy` | Price breaches band | `period`, `k` |
+```
+config.ini
+    │
+    ▼
+MarketData (CSV loader)
+    │
+    ├──► MovingAverageStrategy ──► Portfolio ──► BacktestResult ──► MetricsResult
+    ├──► RSIStrategy           ──► Portfolio ──► BacktestResult ──► MetricsResult
+    └──► BollingerBandStrategy ──► Portfolio ──► BacktestResult ──► MetricsResult
+                                                                         │
+                                                               Optimizer (grid search)
+                                                                         │
+                                                                      Report
+                                                                  (reports/*.txt)
+```
 
 ## Metrics Reference
 
-| Metric | Description |
-|--------|-------------|
-| Sharpe Ratio | Annualized return / volatility. >1 good, >2 excellent |
-| Max Drawdown | Largest % drop from peak to trough |
-| Volatility | Annualized std dev of daily returns (%) |
-| Win Rate | % of completed trades that were profitable |
-| Profit Factor | Gross profit / gross loss. >1 = profitable system |
-
-## CSV Format
-
-```
-date,open,high,low,close,volume
-2024-01-02,185.20,186.95,184.30,185.85,52341200
-```
+| Metric | Formula | Interpretation |
+|--------|---------|----------------|
+| Sharpe Ratio | (return - risk_free) / std_dev × √252 | >1 good, >2 excellent |
+| Max Drawdown | max((peak - trough) / peak) | Lower is better |
+| Volatility | std_dev(daily_returns) × √252 | Annualized risk |
+| Win Rate | winning_trades / total_trades | % profitable trades |
+| Profit Factor | gross_profit / gross_loss | >1 means system profitable |
 
 ## Requirements
 - CMake 3.16+
