@@ -2,7 +2,7 @@
 
 ## Overview
 A modular, incremental trading backtesting engine written in C++17.
-Currently at **v0.8** — Parameter Optimization via Grid Search.
+Currently at **v0.9** — Config file support and enhanced logging.
 
 ## Roadmap
 
@@ -16,29 +16,29 @@ Currently at **v0.8** — Parameter Optimization via Grid Search.
 | v0.6    | Performance metrics             | ✅ Done     |
 | v0.7    | Multiple strategies             | ✅ Done     |
 | v0.8    | Parameter optimization          | ✅ Done     |
-| v0.9    | Logging + config                | 🔜 Next     |
-| v1.0    | Complete backtesting engine     | ⬜ Planned  |
+| v0.9    | Logging + config                | ✅ Done     |
+| v1.0    | Complete backtesting engine     | 🔜 Next     |
 
-## Features (v0.8)
+## Features (v0.9)
 - CSV market data loader with full OHLCV validation
-- Logger utility — terminal (colored) + `logs/backtester.log`
+- **Config-driven execution** — all parameters read from `config.ini`:
+  - Data path, initial cash, trading days
+  - Log level and log file path
+  - Per-strategy parameters (MA windows, RSI thresholds, Bollinger k)
+  - Optimizer search ranges and target metric — all configurable
+- Logger utility — terminal (colored) + file, **log level set from config**
 - 3 strategy types: MovingAverage (SMA/EMA), RSI, Bollinger Bands
 - Long-only portfolio simulation with cash management and equity curve
 - Backtester engine orchestrating the full pipeline
 - Metrics engine: Sharpe, Max Drawdown, Volatility, Win Rate, Profit Factor
-- **Optimizer** — grid search over any parameter space:
-  - `ParamRange` struct defines search dimensions
-  - `OptimizationMetric` enum: SHARPE, RETURN, DRAWDOWN, PROFIT_FACTOR, WIN_RATE
-  - Recursive expansion of all parameter combinations
-  - Ranked results table + best parameter summary
-  - MA grid search: 35 combinations (shortWindow 2–8, longWindow 10–30)
-  - RSI grid search: 96 combinations (period, oversold, overbought)
+- Optimizer — grid search over configurable parameter ranges
 
 ## Project Structure
 
 ```
 TradingBacktester/
 ├── app/main.cpp
+├── config.ini                   ← NEW v0.9
 ├── data/prices.csv
 ├── include/
 │   ├── core/
@@ -46,25 +46,29 @@ TradingBacktester/
 │   │   ├── Strategy.h
 │   │   ├── Backtester.h
 │   │   ├── Metrics.h
-│   │   └── Optimizer.h          ← NEW v0.8
+│   │   └── Optimizer.h
 │   ├── strategy/
 │   │   ├── MovingAverageStrategy.h
 │   │   ├── RSIStrategy.h
 │   │   └── BollingerBandStrategy.h
 │   ├── portfolio/Portfolio.h
-│   └── utils/Logger.h
+│   └── utils/
+│       ├── Logger.h
+│       └── Config.h             ← NEW v0.9
 ├── src/
 │   ├── core/
 │   │   ├── MarketData.cpp
 │   │   ├── Backtester.cpp
 │   │   ├── Metrics.cpp
-│   │   └── Optimizer.cpp        ← NEW v0.8
+│   │   └── Optimizer.cpp
 │   ├── strategy/
 │   │   ├── MovingAverageStrategy.cpp
 │   │   ├── RSIStrategy.cpp
 │   │   └── BollingerBandStrategy.cpp
 │   ├── portfolio/Portfolio.cpp
-│   └── utils/Logger.cpp
+│   └── utils/
+│       ├── Logger.cpp
+│       └── Config.cpp           ← NEW v0.9
 ├── logs/backtester.log
 ├── CMakeLists.txt
 └── README.md
@@ -78,7 +82,7 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
-.\bin\Debug\QuantTradingSystem.exe
+.\bin\Debug\QuantTradingSystem.exe ..\config.ini
 ```
 
 **Linux / macOS:**
@@ -86,26 +90,66 @@ cmake --build .
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build .
-./bin/QuantTradingSystem
+./bin/QuantTradingSystem ../config.ini
 ```
 
-## Usage — Optimizer
+## Config File
 
-```cpp
-trading::Optimizer opt(data, 100000.0);
-opt.setMetric(trading::OptimizationMetric::SHARPE_RATIO);
+All parameters are driven by `config.ini`. Pass a custom config as the first argument:
 
-auto results = opt.gridSearch(
-    { {"shortWindow", 2, 8, 1}, {"longWindow", 10, 30, 5} },
-    [](std::vector<double> p) -> std::shared_ptr<trading::Strategy> {
-        int sw = (int)p[0], lw = (int)p[1];
-        if (sw >= lw) return nullptr;
-        return std::make_shared<trading::MovingAverageStrategy>(sw, lw, trading::MAType::SMA);
-    }
-);
+```bash
+./bin/QuantTradingSystem my_config.ini
+```
 
-opt.printResults(results, 5);  // top 5
-opt.printBest(results);
+### Config Reference
+
+```ini
+[backtester]
+data_path     = data/prices.csv
+initial_cash  = 100000
+trading_days  = 252
+
+[logging]
+log_level     = INFO          # DEBUG | INFO | WARNING | ERROR
+log_file      = logs/backtester.log
+
+[strategy.ma]
+short_window  = 5
+long_window   = 20
+ma_type       = SMA           # SMA | EMA
+
+[strategy.rsi]
+period        = 14
+oversold      = 30
+overbought    = 70
+
+[strategy.bollinger]
+period        = 20
+k             = 2.0
+
+[optimization.ma]
+enabled       = true
+short_min     = 2
+short_max     = 8
+long_min      = 10
+long_max      = 30
+long_step     = 5
+metric        = SHARPE        # SHARPE | RETURN | DRAWDOWN | PROFIT_FACTOR | WIN_RATE
+top_n         = 5
+
+[optimization.rsi]
+enabled       = true
+period_min    = 10
+period_max    = 20
+period_step   = 2
+oversold_min  = 20
+oversold_max  = 35
+oversold_step = 5
+overbought_min   = 65
+overbought_max   = 80
+overbought_step  = 5
+metric           = SHARPE
+top_n            = 5
 ```
 
 ## Strategy Reference

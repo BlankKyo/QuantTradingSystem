@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuantTradingSystem VERSION 0.8.0 LANGUAGES CXX)
+project(QuantTradingSystem VERSION 0.9.0 LANGUAGES CXX)
 
 # ── C++ Standard ──────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 17)
@@ -22,23 +22,25 @@ endif()
 include_directories(include)
 
 # ── Source files ──────────────────────────────────────────
-# Uncomment each line as the version is implemented
 set(CORE_SOURCES
     src/core/MarketData.cpp
-    src/utils/Logger.cpp
-    src/core/Backtester.cpp         
-    src/core/Metrics.cpp     
+    src/core/Backtester.cpp
+    src/core/Metrics.cpp
     src/core/Optimizer.cpp
+    src/utils/Logger.cpp
+    src/utils/Config.cpp
 )
 
 set(STRATEGY_SOURCES
-    src/strategy/MovingAverageStrategy.cpp   
+    src/strategy/MovingAverageStrategy.cpp
+    src/strategy/RSIStrategy.cpp
+    src/strategy/BollingerBandStrategy.cpp
     src/strategy/RSIStrategy.cpp
     src/strategy/BollingerBandStrategy.cpp
 )
 
 set(PORTFOLIO_SOURCES
-    src/portfolio/Portfolio.cpp      
+    src/portfolio/Portfolio.cpp
 )
 
 # ── Core static library ───────────────────────────────────
